@@ -1,6 +1,6 @@
 #include "mesh.h"
 #include <fstream>
-#include <string>
+
 #include <stdlib.h>
 #include <sstream>
 
@@ -108,11 +108,13 @@ bool Mesh::ReadOBJFile(char *filename)
 
 	double scale_factor = 2.0 / largest_range;
 
+	/*
 	for (VertexIter vi = vertices.begin(); vi != vertices.end(); vi++) {
 		for (int i = 0; i < 3; i++) {
 			vi->coord[i] = (vi->coord[i] - center[i]) * scale_factor;
 		}
 	}
+	*/
 
 	printf("Reading OBJ file done ... \n");
 	printf("# of vertices %d\n ", n_vertices);
@@ -120,9 +122,9 @@ bool Mesh::ReadOBJFile(char *filename)
 	return true;
 }
 
-void Mesh::OutputOBJ()
+void Mesh::OutputOBJ(string filename)
 {
-	ofstream output("./output.obj");
+	ofstream output("./output/" + filename);
 	printf("\nbegin output...");
 	// Êä³ö¶¥µã
 	for (VertexIter vi = vertices.begin(); vi != vertices.end(); vi++) {

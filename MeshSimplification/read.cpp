@@ -1,12 +1,15 @@
-
-
 #include "mesh.h"
 #include <cstdio>
+#include <time.h>
 
 bool Mesh::ConstructMeshDataStructure(char *filename)
 {
     //if( ReadOFFFile(filename) == false ) return false;
-	if (ReadOBJFile(filename) == false) return false;
+	char fullFilename[32];
+	strcpy(fullFilename, "./input/");
+	strcat(fullFilename, filename);
+	printf("input file: %s\n", fullFilename);
+	if (ReadOBJFile(fullFilename) == false) return false;
     AddEdgeInfo();
 
     return true;
@@ -84,11 +87,13 @@ bool Mesh::ReadOFFFile(char *filename)
 
     double scale_factor = 2.0/largest_range;
 
+	/*
     for(VertexIter vi = vertices.begin(); vi != vertices.end(); vi++){
         for(int i = 0; i < 3; i++){
             vi->coord[i] = (vi->coord[i] - center[i]) * scale_factor;
         }
     }
+	*/
 
 
     return true;
@@ -186,10 +191,20 @@ void Mesh::AddEdgeInfo()
 
     cerr << "# of edges "  << n_edges << endl;
 
+	clock_t start = clock();
     for(FaceIter   fi = faces.begin();    fi != faces.end();    fi++) AssignFaceNormal(fi);
-	printf("Assign Face Normal Done.\n");
-    for(VertexIter vi = vertices.begin(); vi != vertices.end(); vi++) AssignVertexNormal(vi);
-	printf("Assign Vertex Normal Done.\n");
+	clock_t finish = clock();
+	printf("Assign Face Normal Done: %fs\n",(double)(finish-start)/CLOCKS_PER_SEC);
+
+	start = clock();
+	//int temp = 0;
+	for (VertexIter vi = vertices.begin(); vi != vertices.end(); vi++) {
+		//AssignVertexNormal(vi, temp);
+		AssignVertexNormal(vi);
+		//temp++;
+	}
+	finish = clock();
+	printf("Assign Vertex Normal Done: %fs\n",(double)(finish-start)/CLOCKS_PER_SEC);
 
 }
 
@@ -207,31 +222,35 @@ void Mesh::AssignFaceNormal(FaceIter &fi)
     Normalize(fi->normal);
 }
 
-void Mesh::AssignVertexNormal(VertexIter &vi)
+void Mesh::AssignVertexNormal(VertexIter &vi, int i)
 {
-	//printf("assin vertex normal\n");
     bool isBoundaryVertex = false;
 
     vi->normal[0] = vi->normal[1] = vi->normal[2] = 0.0;
     double cumulativeArea = 0.0;
-
     // traverse faces incident to "vi" in CCW
     HalfEdge *hep = vi->neighborHe;
+	if (hep == NULL) {
+		printf("single vertex\n");
+		return;
+	}
+
     do{
         FaceIter fi = hep->face;
-
         vi->normal[0] += fi->normal[0]*fi->area;
         vi->normal[1] += fi->normal[1]*fi->area;
         vi->normal[2] += fi->normal[2]*fi->area;
         cumulativeArea += fi->area;
-
+		if (hep->prev == NULL)
+		{
+			isBoundaryVertex = true;
+			break;
+		}
         hep = hep->prev->mate;
-
         if(hep == NULL){
             isBoundaryVertex = true;
             break;
         }
-		//printf("loop1\n");
     }while(hep != vi->neighborHe);
 
     // when we cannot traverse all incident faces since "vi" is on boundary
@@ -247,14 +266,74 @@ void Mesh::AssignVertexNormal(VertexIter &vi)
             cumulativeArea += fi->area;
 
             hep = hep->next->mate;
-			//printf("loop2\n");
         }
     }
 
+	//printf("cumulative area: %lf\n",cumulativeArea);
     double invCumulativeArea = 1.0 / cumulativeArea;
 
     vi->normal[0] *= invCumulativeArea;
     vi->normal[1] *= invCumulativeArea;
     vi->normal[2] *= invCumulativeArea;
+}
+
+void Mesh::AssignVertexNormal(VertexIter &vi)
+{
+	//printf("assin vertex normal\n");
+	bool isBoundaryVertex = false;
+
+	vi->normal[0] = vi->normal[1] = vi->normal[2] = 0.0;
+	double cumulativeArea = 0.0;
+
+	// traverse faces incident to "vi" in CCW
+	HalfEdge *hep = vi->neighborHe;
+	if (hep == NULL) {
+		printf("single vertex\n");
+		return;
+	}
+
+	do {
+		FaceIter fi = hep->face;
+
+		vi->normal[0] += fi->normal[0] * fi->area;
+		vi->normal[1] += fi->normal[1] * fi->area;
+		vi->normal[2] += fi->normal[2] * fi->area;
+		cumulativeArea += fi->area;
+
+		hep = hep->prev->mate;
+
+		if (hep == NULL) {
+			isBoundaryVertex = true;
+			break;
+		}
+		//printf("loop1\n");
+	} while (hep != vi->neighborHe);
+
+	// when we cannot traverse all incident faces since "vi" is on boundary
+	// we traverse faces incident to "vi" in CW to check all incident faces
+	if (isBoundaryVertex) {
+		HalfEdge *hep = vi->neighborHe->mate;
+		while (hep != NULL) {
+			//printf("loop2.a\n");
+			FaceIter fi = hep->face;
+			//printf("loop2.b\n");
+
+			vi->normal[0] += fi->normal[0] * fi->area;
+			vi->normal[1] += fi->normal[1] * fi->area;
+			vi->normal[2] += fi->normal[2] * fi->area;
+			cumulativeArea += fi->area;
+			//printf("loop2.c\n");
+			hep = hep->next->mate;
+			//printf("loop2\n");
+		}
+	}
+
+	//printf("cumulative area: %lf\n",cumulativeArea);
+	double invCumulativeArea = 1.0 / cumulativeArea;
+
+	vi->normal[0] *= invCumulativeArea;
+	vi->normal[1] *= invCumulativeArea;
+	vi->normal[2] *= invCumulativeArea;
+	//printf("end %d\n", i);
 }
 

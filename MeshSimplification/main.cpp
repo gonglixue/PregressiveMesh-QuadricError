@@ -18,6 +18,8 @@ bool left_click = 0, right_click = 0;
 bool doEdgeCollapse = false, doVertexSplit = false, doLOD = false;
 int  step = 0;
 
+string filename;
+
 
 void mouse(int button, int state, int x, int y)
 {
@@ -86,7 +88,7 @@ void keyboard( unsigned char c, int x, int y )
         else       toggle = 1;
         break;
 	case 'o':
-		mesh.OutputOBJ();
+		mesh.OutputOBJ(filename);
 		break;
     }
 
@@ -130,13 +132,15 @@ void display()
 
 int main(int argc, char *argv[])
 {
+	//strcat("./input/", argv[1]);
     if( argc != 2 || mesh.ConstructMeshDataStructure(argv[1]) == false ){
         cerr << "usage: meshSimplification.exe *.off\n";
         exit(0);
     }
-
-    simplification.InitSimplification(&mesh);
-
+	filename = argv[1];
+    //simplification.InitSimplification(&mesh);
+	mesh.OutputOBJ(filename);
+	/*
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
     glutInitWindowPosition(20, 20);
@@ -148,7 +152,7 @@ int main(int argc, char *argv[])
     glutKeyboardFunc(keyboard);
     GLInit();
     glutMainLoop();
-
+	*/
     return 1;
 }
 

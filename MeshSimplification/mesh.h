@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <list>
 #include <queue>
@@ -148,8 +149,9 @@ public:
     bool ConstructMeshDataStructure(char *filename);
     void AssignFaceNormal(FaceIter &fi);
     void AssignVertexNormal(VertexIter &vi);
+	void AssignVertexNormal(VertexIter &vi, int i);
     void Display(int mode);
-	void OutputOBJ();
+	void OutputOBJ(string filename);
     //void Picking(int& x, int& y);
 };
 
